@@ -1,1 +1,56 @@
-<p>layer works!</p>
+<div class="map-wrapper">
+  <div class="controls">
+        <div class="Choselayer">
+            <h3 class="layer">Vùng</h3>
+            <div>
+            
+                <div>
+                    <label>
+                    <input type="checkbox" (change)="toggleLayer('newbinhduong', $event)" checked />
+                    36 phường xã mới
+                    </label>
+                </div>
+                @if(check){
+                    <div>
+                    <input type="range" min="0" max="1" step="0.1" [value]="opacity" (input)="updateOpacity('newbinhduong', $event)"/>
+                    </div>
+                }
+           
+           
+            </div>
+            <div>
+                <div>
+                    <label>
+                        <input type="checkbox" (change)="toggleLayer('oldbinhduong', $event)" />
+                        91 phường xã cũ
+                    </label>
+                </div>
+                @if(check2){
+                    <div>
+                        <input type="range" min="0" max="1" step="0.1" [value]="opacity2" (input)="updateOpacity('oldbinhduong', $event)"/>
+                    </div>
+                }
+                
+            </div>
+        </div>
+        <div class="ChosePoint">
+            <div>
+                <h3 class="Point">Điểm</h3>
+                <div>
+
+                </div>
+            </div>
+        </div>
+         <div class="ChoseRoad">
+            <div>
+                <h3 class="road">Đường</h3>
+                <div>
+
+                </div>
+            </div>
+        </div>
+  </div>
+
+  
+  <div id="map"></div>
+</div>

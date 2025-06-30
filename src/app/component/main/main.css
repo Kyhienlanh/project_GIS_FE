@@ -1,4 +1,4 @@
-.body {
+/* .body {
   width: calc(100% - 5rem);
   margin-left: 5rem;
   z-index: 0;
@@ -7,6 +7,14 @@
   transition: all 0.5s ease;
   background: #f4f7fa;
   padding: 3rem;
+} */
+.body {
+  width: calc(100% - 5rem);
+  margin-left: 5rem;
+  height: 100vh;           /* QUAN TRỌNG: để component con chiếm được chiều cao */
+  padding: 0;              /* hoặc padding nhỏ nếu bạn muốn bản đồ full */
+  position: relative;
+  background: #f4f7fa;
 }
 
 .body-trimmed {
