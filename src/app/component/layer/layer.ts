@@ -11,12 +11,19 @@ export class Layer implements OnInit {
   private wmsLayer!: L.TileLayer.WMS;
   private wmsLayer2!: L.TileLayer.WMS;
   private pointLayer!: L.GeoJSON;
+   private pointLayerNew!: L.GeoJSON;
   opacity: number = 1;
   opacity2: number = 1;
   check = true;  
   check2 = false;
    customIcon = L.icon({
     iconUrl: 'assets/icons/map_pin.png',
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -40]
+  }); 
+   customIconNew = L.icon({
+    iconUrl: 'assets/icons/map_pin_new.png',
     iconSize: [30, 40],
     iconAnchor: [15, 40],
     popupAnchor: [0, -40]
@@ -123,7 +130,13 @@ export class Layer implements OnInit {
             Kinh độ: ${props.lon}
           `;
           layer.bindPopup(popupContent);
-          layer.on('click', () => layer.openPopup());
+           layer.on('click', (e: L.LeafletMouseEvent) => {
+            layer.openPopup();
+            this.map.flyTo(e.latlng, 14, {
+              animate: true,
+              duration: 1  
+            });
+          });
           if ('bringToFront' in layer && typeof (layer as any).bringToFront === 'function') {
             (layer as any).bringToFront();
           }
@@ -135,8 +148,66 @@ export class Layer implements OnInit {
     .catch(err => {
       console.error('Lỗi khi gọi GeoServer:', err);
     });
-}
+  }
 
+     togglePointnew(Point: string, event: Event): void {
+      const CheckPoint = (event.target as HTMLInputElement).checked;
+      if (CheckPoint) {
+        this.loadPointsFromGeoServernew();
+        console.log('Bật điểm UBND mới');
+      } else {
+        if (this.pointLayerNew) {
+          this.map.removeLayer(this.pointLayerNew);
+          console.log('Ẩn điểm UBND mới');
+        }
+      }
+    }
+  private loadPointsFromGeoServernew(): void {
+  const url = 'http://localhost:8080/geoserver/ne/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ne:UBNDnew&outputFormat=application/json';
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+     
+      if (this.pointLayerNew) {
+        this.map.removeLayer(this.pointLayerNew);
+      }
+    
+      this.pointLayerNew = L.geoJSON(data, {
+        pointToLayer: (feature, latlng) => {
+          return L.marker(latlng, { icon: this.customIconNew });
+        },
+        onEachFeature: (feature, layer) => {
+          console.log('Thuộc tính điểm:', feature.properties);
+          const props = feature.properties;
+          const popupContent = `
+            <b>${props.ten || 'Không rõ tên'}</b><br>
+            Trụ sở: ${props.TruSo || 'Không có'}<br>
+            <br>
+            Xã/Phường: ${props.phuong || 'Không có'}<br>
+            Vĩ độ: ${props.lat}<br>
+            Kinh độ: ${props.lon}
+          `;
+          layer.bindPopup(popupContent);
+          // layer.on('click', () => layer.openPopup());
+          layer.on('click', (e: L.LeafletMouseEvent) => {
+            layer.openPopup();
+            this.map.flyTo(e.latlng, 14, {
+              animate: true,
+              duration: 1  
+            });
+          });
+          if ('bringToFront' in layer && typeof (layer as any).bringToFront === 'function') {
+            (layer as any).bringToFront();
+          }
+        }
+      });
+
+      this.pointLayerNew.addTo(this.map);
+    })
+    .catch(err => {
+      console.error('Lỗi khi gọi GeoServer:', err);
+    });
+}
   
  
 
