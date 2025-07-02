@@ -10,11 +10,17 @@ export class Layer implements OnInit {
   private map!: L.Map;
   private wmsLayer!: L.TileLayer.WMS;
   private wmsLayer2!: L.TileLayer.WMS;
+  private pointLayer!: L.GeoJSON;
   opacity: number = 1;
   opacity2: number = 1;
- check = true;  
-check2 = false;
-
+  check = true;  
+  check2 = false;
+   customIcon = L.icon({
+    iconUrl: 'assets/icons/map_pin.png',
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -40]
+  }); 
   ngOnInit(): void {
     this.initMap();
   }
@@ -52,7 +58,7 @@ check2 = false;
 
   toggleLayer(layer: string, event: Event): void {
   const checked = (event.target as HTMLInputElement).checked;
-
+    console.log(checked);
     if (layer === 'newbinhduong') {
       this.check = checked;
       checked ? this.wmsLayer.addTo(this.map) : this.map.removeLayer(this.wmsLayer);
@@ -77,4 +83,61 @@ check2 = false;
     }
   }
  
+    togglePoint(Point: string, event: Event): void {
+      const CheckPoint = (event.target as HTMLInputElement).checked;
+      if (CheckPoint) {
+        this.loadPointsFromGeoServer();
+        console.log('Bật điểm UBND');
+      } else {
+        if (this.pointLayer) {
+          this.map.removeLayer(this.pointLayer);
+          console.log('Ẩn điểm UBND');
+        }
+      }
+    }
+
+  private loadPointsFromGeoServer(): void {
+  const url = 'http://localhost:8080/geoserver/ne/ows?' +
+              'service=WFS&version=1.0.0&request=GetFeature' +
+              '&typeName=ne:pointUBND&outputFormat=application/json';
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+     
+      if (this.pointLayer) {
+        this.map.removeLayer(this.pointLayer);
+      }
+
+      this.pointLayer = L.geoJSON(data, {
+        pointToLayer: (feature, latlng) => {
+          return L.marker(latlng, { icon: this.customIcon });
+        },
+        onEachFeature: (feature, layer) => {
+          console.log('Thuộc tính điểm:', feature.properties);
+          const props = feature.properties;
+          const popupContent = `
+            <b>${props.ten || 'Không rõ tên'}</b><br>
+            Ghi chú: ${props.ghichu || 'Không có'}<br>
+            Vĩ độ: ${props.lat}<br>
+            Kinh độ: ${props.lon}
+          `;
+          layer.bindPopup(popupContent);
+          layer.on('click', () => layer.openPopup());
+          if ('bringToFront' in layer && typeof (layer as any).bringToFront === 'function') {
+            (layer as any).bringToFront();
+          }
+        }
+      });
+
+      this.pointLayer.addTo(this.map);
+    })
+    .catch(err => {
+      console.error('Lỗi khi gọi GeoServer:', err);
+    });
+}
+
+  
+ 
+
 }
