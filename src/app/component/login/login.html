@@ -1,0 +1,25 @@
+<h2>Đăng nhập</h2>
+
+<form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+  <div>
+    <label>Tên đăng nhập:</label>
+    <input
+      type="text"
+      name="username"
+      [(ngModel)]="username"
+      required
+    />
+  </div>
+
+  <div>
+    <label>Mật khẩu:</label>
+    <input
+      type="password"
+      name="password"
+      [(ngModel)]="password"
+      required
+    />
+  </div>
+
+  <button type="submit" [disabled]="!loginForm.form.valid">Đăng nhập</button>
+</form>

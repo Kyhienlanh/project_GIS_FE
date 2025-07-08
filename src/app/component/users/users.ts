@@ -7,5 +7,14 @@ import { Component } from '@angular/core';
   styleUrl: './users.css'
 })
 export class Users {
-
+  canActivate(): boolean {
+    const token = localStorage.getItem('token'); 
+    if (token) {
+      return true;
+    }
+    return false;
+  }
+  constructor(){
+    console.log(this.canActivate());
+  }
 }
