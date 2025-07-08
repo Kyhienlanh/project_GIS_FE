@@ -1,65 +1,68 @@
 <div class="map-wrapper">
   <div class="controls">
-        <div class="Choselayer">
-            <h3 class="layer">Vùng</h3>
-            <div>
-            
-                <div>
-                    <label>
-                    <input type="checkbox" (change)="toggleLayer('newbinhduong', $event)" checked />
-                    36 phường xã mới
-                    </label>
-                </div>
-                @if(check){
-                    <div>
-                    <input type="range" min="0" max="1" step="0.1" [value]="opacity" (input)="updateOpacity('newbinhduong', $event)"/>
-                    </div>
-                }
-           
-           
-            </div>
-            <div>
-                <div>
-                    <label>
-                        <input type="checkbox" (change)="toggleLayer('oldbinhduong', $event)" />
-                        91 phường xã cũ
-                    </label>
-                </div>
-                @if(check2){
-                    <div>
-                        <input type="range" min="0" max="1" step="0.1" [value]="opacity2" (input)="updateOpacity('oldbinhduong', $event)"/>
-                    </div>
-                }
-                
-            </div>
-        </div>
-        <div class="ChosePoint">
-            <div>
-                <h3 class="Point">Điểm</h3>
-                <div>
-                     <label>
-                        <input type="checkbox" (change)="togglePoint('PointUBND', $event)" />
-                        Trung tâm hành chính cũ
-                    </label>
-                </div>
-                <div>
-                     <label>
-                        <input type="checkbox" (change)="togglePointnew('PointUBNDnew', $event)" />
-                        Trung tâm hành chính mới
-                    </label>
-                </div>
-            </div>
-        </div>
-         <div class="ChoseRoad">
-            <div>
-                <h3 class="road">Đường</h3>
-                <div>
+    <div class="search-container">
+      <div class="search-bar">
+        <button class="menu-toggle" (click)="menuOpen = !menuOpen">⋮</button>
+        <input
+          type="text"
+          placeholder="Tìm UBND..."
+          (input)="search($event)"
+          class="search-box"
+        />
+      </div>
 
-                </div>
-            </div>
+      @if (searchResults.length > 0) {
+        <ul class="result-list">
+          @for (item of searchResults; track item.properties.ten) {
+            <li (click)="zoomToPoint(item)">
+              {{ item.properties.ten }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (menuOpen) {
+      <div class="option-panel">
+        <div class="Choselayer">
+          <h3 class="layer">Vùng</h3>
+          <label>
+            <input type="checkbox" (change)="toggleLayer('newbinhduong', $event)" [checked]="check" />
+            36 phường xã mới
+          </label>
+          @if (check) {
+            <input type="range" min="0" max="1" step="0.1" [value]="opacity" (input)="updateOpacity('newbinhduong', $event)" />
+          }
+
+          <label>
+            <input type="checkbox" (change)="toggleLayer('oldbinhduong', $event)" [checked]="check2" />
+            91 phường xã cũ
+          </label>
+          @if (check2) {
+            <input type="range" min="0" max="1" step="0.1" [value]="opacity2" (input)="updateOpacity('oldbinhduong', $event)" />
+          }
         </div>
+
+        <div class="ChosePoint">
+          <h3 class="Point">Điểm</h3>
+          <label>
+            <input type="checkbox" (change)="togglePoint('PointUBND', $event)" />
+            Trung tâm hành chính cũ
+          </label>
+          <label>
+            <input type="checkbox" (change)="togglePointnew('PointUBNDnew', $event)" [checked]="checkpointNew"/>
+            Trung tâm hành chính mới
+          </label>
+        </div>
+
+        <div class="ChoseRoad">
+          <h3 class="road">Đường</h3>
+          <!-- Thêm các checkbox hoặc options ở đây -->
+        </div>
+      </div>
+    }
   </div>
 
-  
-  <div id="map"></div>
+    <div #mapContainer id="map"></div>
+
 </div>

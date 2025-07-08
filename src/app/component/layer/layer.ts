@@ -1,21 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit ,AfterViewInit} from '@angular/core';
 import * as L from 'leaflet';
+import Fuse from 'fuse.js';
+import { ViewChild, ElementRef } from '@angular/core';
+
 
 @Component({
   selector: 'app-layer',
   templateUrl: './layer.html',
   styleUrls: ['./layer.css']
 })
-export class Layer implements OnInit {
+export class Layer implements OnInit,AfterViewInit  {
+  menuOpen = false;
+
   private map!: L.Map;
   private wmsLayer!: L.TileLayer.WMS;
   private wmsLayer2!: L.TileLayer.WMS;
   private pointLayer!: L.GeoJSON;
-   private pointLayerNew!: L.GeoJSON;
+  private pointLayerNew!: L.GeoJSON;
+  @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
+  pointFeatures: any[] = []; // Lưu danh sách điểm để tìm
+  searchResults: any[] = []; // Kết quả tìm kiếm
+  private fuse!: Fuse<any>;
   opacity: number = 1;
   opacity2: number = 1;
   check = true;  
   check2 = false;
+  checkpointNew=true;
    customIcon = L.icon({
     iconUrl: 'assets/icons/map_pin.png',
     iconSize: [30, 40],
@@ -29,39 +39,45 @@ export class Layer implements OnInit {
     popupAnchor: [0, -40]
   }); 
   ngOnInit(): void {
-    this.initMap();
+    this.loadPointsFromGeoServernew();
+    this.checkpointNew=true;
   }
-
+   ngAfterViewInit(): void {
+    this.initMap(); 
+  }
   private initMap(): void {
-    this.map = L.map('map', {
-      center: [11.2, 106.65],
-      zoom: 10
-    });
+  this.map = L.map(this.mapContainer.nativeElement, {
+    center: [11.2, 106.65],
+    zoom: 10
+  });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(this.map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(this.map);
 
-    this.wmsLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
-      layers: 'ne:newBinhDuong',
-      format: 'image/png',
-      transparent: true,
-      version: '1.1.0',
-      attribution: 'GeoServer',
-      opacity: this.opacity
-    });
-    
-    this.wmsLayer2 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
-      layers: 'ne:oldBinhDuong',
-      format: 'image/png',
-      transparent: true,
-      version: '1.1.0',
-      attribution: 'GeoServer', 
-      opacity: this.opacity2
-    });
-    this.wmsLayer.addTo(this.map);
-  }
+  this.wmsLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:newBinhDuong',
+    format: 'image/png',
+    transparent: true,
+    version: '1.1.0',
+    attribution: 'GeoServer',
+    opacity: this.opacity
+  });
+
+  this.wmsLayer2 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:oldBinhDuong',
+    format: 'image/png',
+    transparent: true,
+    version: '1.1.0',
+    attribution: 'GeoServer',
+    opacity: this.opacity2
+  });
+
+  this.wmsLayer.addTo(this.map);
+ 
+}
+
 
   toggleLayer(layer: string, event: Event): void {
   const checked = (event.target as HTMLInputElement).checked;
@@ -115,6 +131,12 @@ export class Layer implements OnInit {
       if (this.pointLayer) {
         this.map.removeLayer(this.pointLayer);
       }
+      // this.pointFeatures = data.features;
+     
+      // this.fuse = new Fuse(this.pointFeatures, {
+      //   keys: ['properties.ten'],
+      //   threshold: 0.4
+      // });
 
       this.pointLayer = L.geoJSON(data, {
         pointToLayer: (feature, latlng) => {
@@ -171,7 +193,12 @@ export class Layer implements OnInit {
       if (this.pointLayerNew) {
         this.map.removeLayer(this.pointLayerNew);
       }
-    
+       this.pointFeatures = data.features;
+     
+      this.fuse = new Fuse(this.pointFeatures, {
+        keys: ['properties.ten'],
+        threshold: 0.4
+      });
       this.pointLayerNew = L.geoJSON(data, {
         pointToLayer: (feature, latlng) => {
           return L.marker(latlng, { icon: this.customIconNew });
@@ -209,6 +236,32 @@ export class Layer implements OnInit {
     });
 }
   
- 
+  search(event: Event): void {
+  const keyword = (event.target as HTMLInputElement).value;
+  if (!this.fuse || keyword.length < 2) {
+    this.searchResults = [];
+    return;
+  } 
+
+ this.searchResults = this.fuse.search(keyword).slice(0, 5).map(result => result.item);
+
+}
+
+zoomToPoint(feature: any): void {
+  const lat = feature.geometry.coordinates[1];
+  const lon = feature.geometry.coordinates[0];
+  
+  this.map.flyTo([lat, lon], 15);
+
+  L.popup()
+    .setLatLng([lat, lon])
+    .setContent(`<b>${feature.properties.ten}</b>`)
+    .openOn(this.map);
+
+  this.searchResults = []; 
+}
+
+
+
 
 }
