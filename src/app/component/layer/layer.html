@@ -57,7 +57,21 @@
 
         <div class="ChoseRoad">
           <h3 class="road">Đường</h3>
-          <!-- Thêm các checkbox hoặc options ở đây -->
+          <!-- <label>
+            <input type="checkbox" (change)="toggleRoad('Road', $event)" />
+            Tuyến đường giao thông
+          </label> -->
+          <label>
+            <input type="checkbox" (change)="toggleRoadGeoJSON($event)" />
+            Tuyến đường giao thông (popup)
+          </label>
+
+
+        </div>
+        <div>
+          <button (click)="exportGeoJSON('old')">Export UBND Cũ</button>
+          <button (click)="exportGeoJSON('new')">Export UBND Mới</button>
+
         </div>
       </div>
     }

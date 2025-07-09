@@ -17,9 +17,11 @@ export class Layer implements OnInit,AfterViewInit  {
   private wmsLayer2!: L.TileLayer.WMS;
   private pointLayer!: L.GeoJSON;
   private pointLayerNew!: L.GeoJSON;
+  private roadLayerGeoJSON!: L.GeoJSON;
+  // private roadWmsLayer!: L.TileLayer.WMS;
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
-  pointFeatures: any[] = []; // Lưu danh sách điểm để tìm
-  searchResults: any[] = []; // Kết quả tìm kiếm
+  pointFeatures: any[] = []; 
+  searchResults: any[] = [];
   private fuse!: Fuse<any>;
   opacity: number = 1;
   opacity2: number = 1;
@@ -44,6 +46,7 @@ export class Layer implements OnInit,AfterViewInit  {
   }
    ngAfterViewInit(): void {
     this.initMap(); 
+    // this.loadRoad();
   }
   private initMap(): void {
   this.map = L.map(this.mapContainer.nativeElement, {
@@ -261,7 +264,136 @@ zoomToPoint(feature: any): void {
   this.searchResults = []; 
 }
 
+  exportGeoJSON(type: 'old' | 'new'): void {
+  const data = type === 'old' ? this.pointLayer?.toGeoJSON() : this.pointLayerNew?.toGeoJSON();
+  if (!data) {
+    alert('Không có dữ liệu để xuất!');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = type === 'old' ? 'UBND_CU.geojson' : 'UBND_MOI.geojson';
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+//  public toggleRoad(Road: string, event: Event): void {
+//   const checked = (event.target as HTMLInputElement).checked;
+
+//   if (checked) {
+//     if (!this.roadWmsLayer) {
+//       this.loadRoad(); 
+//     }
+//     this.roadWmsLayer.addTo(this.map);
+//   } else {
+//     if (this.roadWmsLayer) {
+//       this.map.removeLayer(this.roadWmsLayer);
+//     }
+//   }
+// }
+
+//   public loadRoad():void{
+//       this.roadWmsLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+//         layers: 'ne:TuyenDuongGiaoThong',
+//         format: 'image/png',
+//         transparent: true,
+//         version: '1.1.0',
+//         attribution: 'GeoServer',
+//         opacity: 0.8
+//       });
+//   }
 
 
+public loadRoadGeoJSON(): void {
+  const url = 'http://localhost:8080/geoserver/ne/ows?' +
+              'service=WFS&version=1.0.0&request=GetFeature' +
+              '&typeName=ne:TuyenDuongGiaoThong&outputFormat=application/json';
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (this.roadLayerGeoJSON) {
+        this.map.removeLayer(this.roadLayerGeoJSON);
+      }
+
+      this.roadLayerGeoJSON = L.geoJSON(data, {
+        style: feature => {
+  const highway = feature?.properties?.highway;
+
+  const colorMap: { [key: string]: string } = {
+    'primary': '#ff0000',         // Đỏ
+    'secondary': '#ffa500',       // Cam
+    'tertiary': '#ffff00',        // Vàng
+    'residential': '#00bfff',     // Xanh dương
+    'service': '#8a2be2',         // Tím
+    'unclassified': '#999999',    // Xám
+    'trunk': '#ff6600',           // Cam đậm
+    'pedestrian': '#009933',      // Xanh lá
+    'living_street': '#a0522d'    // Nâu đất
+  };
+
+  const color = colorMap[highway] || '#666'; 
+
+  return {
+    color,
+    weight: 3,
+    opacity: 0.9
+  };
+}
+,
+       onEachFeature: (feature, layer) => {
+  const props = feature.properties;
+
+  
+  const highwayMap: { [key: string]: string } = {
+    'primary': 'Đường chính',
+    'residential': 'Đường dân cư',
+    'pedestrian': 'Đường đi bộ',
+    'secondary': 'Đường phụ',
+    'tertiary': 'Đường cấp ba',
+    'service ':'Đường dịch vụ',
+    'unclassified':'Đường cấp thấp chưa phân loại',
+    'trunk':'Đường quốc lộ chính',
+    'living_street':'Đường dân sinh'
+  };
+
+  const highwayVN = highwayMap[props.highway] || props.highway || 'Không rõ';
+
+  const popupContent = `
+    <b>ID:</b> ${props['@id'] || 'Không rõ'}<br>
+    <b>Loại đường:</b> ${highwayVN}<br>
+    <b>Khu vực:</b> ${props.area === 'yes' ? 'Có' : 'Không'}
+  `;
+
+  layer.bindPopup(popupContent);
+  layer.on('click', (e: L.LeafletMouseEvent) => {
+    layer.openPopup();
+    this.map.flyTo(e.latlng, 16);
+  });
+}
+
+      });
+
+      this.roadLayerGeoJSON.addTo(this.map);
+    })
+    .catch(err => {
+      console.error('Lỗi tải GeoJSON tuyến đường:', err);
+    });
+}
+
+
+toggleRoadGeoJSON(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked;
+  if (checked) {
+    this.loadRoadGeoJSON();
+  } else {
+    if (this.roadLayerGeoJSON) {
+      this.map.removeLayer(this.roadLayerGeoJSON);
+    }
+  }
+}
 
 }
