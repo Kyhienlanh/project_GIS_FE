@@ -73,16 +73,33 @@
 
 
         </div>
-        <div>
+        <div class="findRoad">
+            <h3 class="findroad">Tìm đường đi</h3>
           <!-- <button (click)="exportGeoJSON('old')">Export UBND Cũ</button>
           <button (click)="exportGeoJSON('new')">Export UBND Mới</button> -->
-            <button (click)="showMyLocation()">📍 Vị trí của tôi</button>
+            <!-- <button (click)="showMyLocation()">📍 Vị trí của tôi</button> -->
+            <label>
+                <input type="checkbox" (change)="TimDuongDi($event)" />
+                Chọn vị trí muốn đến
+            </label>
+         <label>
+            <input type="checkbox" [checked]="isTracking" (change)="toggleTracking($event)" />
+            🚶 Theo dõi vị trí khi di chuyển
+            </label>
 
+
+
+
+        </div>
+        <div>
+            
         </div>
       </div>
     }
-  </div>
+  </div>    
+    <div #notification class="notification" style="display: none;"></div>
 
+    
     <div #mapContainer id="map"></div>
 
 </div>

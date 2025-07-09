@@ -2,6 +2,7 @@ import { Component, OnInit ,AfterViewInit} from '@angular/core';
 import * as L from 'leaflet';
 import Fuse from 'fuse.js';
 import { ViewChild, ElementRef } from '@angular/core';
+import 'leaflet-routing-machine';
 
 @Component({
   selector: 'app-homeuser',
@@ -9,18 +10,8 @@ import { ViewChild, ElementRef } from '@angular/core';
   templateUrl: './homeuser.html',
   styleUrl: './homeuser.css'
 })
+
 export class Homeuser  implements OnInit,AfterViewInit  {
-  menuOpen = false;
-
-  private map!: L.Map;
-  private wmsLayer!: L.TileLayer.WMS;
-  private wmsLayer2!: L.TileLayer.WMS;
-  private pointLayer!: L.GeoJSON;
-  private pointLayerDulich!: L.GeoJSON;
-  private pointLayerNew!: L.GeoJSON;
-  private roadLayerGeoJSON!: L.GeoJSON;
-
-  @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
   pointFeatures: any[] = []; 
   searchResults: any[] = [];
   private fuse!: Fuse<any>;
@@ -29,7 +20,20 @@ export class Homeuser  implements OnInit,AfterViewInit  {
   check = true;  
   check2 = false;
   checkpointNew=true;
-   customIcon = L.icon({
+  menuOpen = false;
+  private isRoutingEnabled = false;
+  private map!: L.Map;
+  private wmsLayer!: L.TileLayer.WMS;
+  private wmsLayer2!: L.TileLayer.WMS;
+  private pointLayer!: L.GeoJSON;
+  private pointLayerDulich!: L.GeoJSON;
+  private pointLayerNew!: L.GeoJSON;
+  private roadLayerGeoJSON!: L.GeoJSON;
+  private routeControl: any;
+  isTracking = false; 
+  private userMarker!: L.Marker;
+  private watchId: number | null = null;
+     customIcon = L.icon({
     iconUrl: 'assets/icons/map_pin.png',
     iconSize: [30, 40],
     iconAnchor: [15, 40],
@@ -41,46 +45,241 @@ export class Homeuser  implements OnInit,AfterViewInit  {
     iconAnchor: [15, 40],
     popupAnchor: [0, -40]
   }); 
+  
+  @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
+@ViewChild('notification', { static: false }) notificationRef!: ElementRef;
+
+showNotification(message: string): void {
+  const el = this.notificationRef.nativeElement;
+  el.innerText = message;
+  el.style.display = 'block';
+
+  // Tự ẩn sau 3 giây
+  setTimeout(() => {
+    el.style.display = 'none';
+  }, 3000);
+}
+
+showNotificationLong(message: string): void {
+  const el = this.notificationRef.nativeElement;
+  el.innerText = message;
+  el.style.display = 'block';
+
+  // Tự ẩn sau 3 giây
+  setTimeout(() => {
+    el.style.display = 'none';
+  }, 10000);
+}
+
+
   ngOnInit(): void {
     this.loadPointsFromGeoServernew();
     this.checkpointNew=true;
   }
    ngAfterViewInit(): void {
-    this.initMap(); 
-    // this.loadRoad();
+    this.initMap();   
+    // this.enableRoutingOnClick();
+    this.showMyLocation();
+   
+    
   }
   private initMap(): void {
-  this.map = L.map(this.mapContainer.nativeElement, {
-    center: [11.2, 106.65],
-    zoom: 10
-  });
+    this.map = L.map(this.mapContainer.nativeElement, {
+      center: [11.2, 106.65],
+      zoom: 10
+    });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-  }).addTo(this.map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(this.map);
 
-  this.wmsLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
-    layers: 'ne:newBinhDuong',
-    format: 'image/png',
-    transparent: true,
-    version: '1.1.0',
-    attribution: 'GeoServer',
-    opacity: this.opacity
-  });
+    this.wmsLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+      layers: 'ne:newBinhDuong',
+      format: 'image/png',
+      transparent: true,
+      version: '1.1.0',
+      attribution: 'GeoServer',
+      opacity: this.opacity
+    });
 
-  this.wmsLayer2 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
-    layers: 'ne:oldBinhDuong',
-    format: 'image/png',
-    transparent: true,
-    version: '1.1.0',
-    attribution: 'GeoServer',
-    opacity: this.opacity2
-  });
+    this.wmsLayer2 = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+      layers: 'ne:oldBinhDuong',
+      format: 'image/png',
+      transparent: true,
+      version: '1.1.0',
+      attribution: 'GeoServer',
+      opacity: this.opacity2
+    });
 
-  this.wmsLayer.addTo(this.map);
- 
-}
+    this.wmsLayer.addTo(this.map);
+  
+  }
+
+  //Di chuyển theo vị trí
+  startTrackingLocation(): void {
+    if (!navigator.geolocation) {
+      alert('Trình duyệt không hỗ trợ định vị!');
+      this.showNotification("Trình duyệt không hỗ trợ định vị");
+      return;
+    }
+
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+    }
+
+    this.watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const latLng = L.latLng(lat, lon);
+
+        if (!this.userMarker) {
+          this.userMarker = L.marker(latLng, {
+            icon: L.icon({
+              iconUrl: 'assets/icons/myaddress_pin.png',
+              iconSize: [30, 30],
+              iconAnchor: [15, 30]
+            })
+          }).addTo(this.map).bindPopup('📍 Vị trí hiện tại của bạn');
+        } else {
+          this.userMarker.setLatLng(latLng);
+        }
+
+        this.map.setView(latLng, this.map.getZoom(), {
+          animate: true
+        });
+      },
+      (error) => {
+        console.error('Lỗi theo dõi vị trí:', error);
+        alert('Không thể theo dõi vị trí.');
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000,
+        timeout: 5000
+      }
+    );
+  }
+
+  
+  stopTrackingLocation(): void {
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+
+    if (this.userMarker) {
+      this.map.removeLayer(this.userMarker);
+      this.userMarker = undefined!;
+    }
+  }
+
+  toggleTracking(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.isTracking = checked;
+
+    if (checked) {
+      this.startTrackingLocation();
+    } else {
+      this.stopTrackingLocation();
+    }
+  }
+
+
+  
+    //Tìm đường đi
+  TimDuongDi(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.isRoutingEnabled = checked;
+
+    if (checked) {
+      this.enableRoutingOnClick();
+      // alert("Bấm vào bản đồ để chọn điểm đến.");
+      this.showNotification('Bấm vào bản đồ để chọn điểm đến.');
+
+    } else {
+      this.map.off('click'); // Xóa sự kiện click
+      if (this.routeControl) {
+        this.map.removeControl(this.routeControl); // Xóa tuyến cũ nếu có
+        this.routeControl = null;
+      }
+    }
+  }
+  
+  enableRoutingOnClick(): void {
+    if (!navigator.geolocation) {
+      alert('Trình duyệt không hỗ trợ định vị!');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const startLat = position.coords.latitude;
+        const startLng = position.coords.longitude;
+
+        // Gỡ bỏ sự kiện click cũ để tránh trùng lặp
+        this.map.off('click');
+
+        // Gắn sự kiện click để chọn điểm đến
+        this.map.on('click', (e: L.LeafletMouseEvent) => {
+          if (!this.isRoutingEnabled) return; // chỉ kích hoạt khi checkbox bật
+
+          const destLat = e.latlng.lat;
+          const destLng = e.latlng.lng;
+
+          // Xóa tuyến cũ nếu có
+          if (this.routeControl) {
+            this.map.removeControl(this.routeControl);
+          }
+
+          // Tạo tuyến đường mới với icon tùy chỉnh
+              this.routeControl = L.Routing.control({
+        waypoints: [
+          L.latLng(startLat, startLng),
+          L.latLng(destLat, destLng)
+        ],
+        router: L.Routing.osrmv1({
+          serviceUrl: 'https://router.project-osrm.org/route/v1'
+        }),
+        show: true, // 🔥 bật panel chi tiết hướng đi
+        routeWhileDragging: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+
+        createMarker: (i: number, waypoint: any, n: number) => {
+          const icon = L.icon({
+            iconUrl: i === 0 ? 'assets/icons/myaddress_pin.png' : 'assets/icons/map_pin.png',
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40]
+          });
+
+          const marker = L.marker(waypoint.latLng, { icon });
+          marker.bindPopup(i === 0 ? '📍 Vị trí của bạn' : '🎯 Điểm đến');
+          return marker;
+        }
+      }).addTo(this.map);
+
+          this.routeControl.on('routesfound', (e: any) => {
+            const summary = e.routes[0].summary;
+            const distance = (summary.totalDistance / 1000).toFixed(2); // km
+            const time = Math.round(summary.totalTime / 60); // phút
+
+            // alert(`🚗 Quãng đường: ${distance} km\n⏱️ Thời gian dự kiến: ${time} phút`);
+            this.showNotificationLong(`🚗 Quãng đường: ${distance} km\n⏱️ Thời gian dự kiến: ${time} phút`);
+            
+          });
+                });
+      },
+      (error) => {
+        console.error('Không thể lấy vị trí:', error);
+        alert('Không thể xác định vị trí của bạn.');
+      }
+    );
+  }
+
+
 
 
   toggleLayer(layer: string, event: Event): void {
@@ -317,7 +516,7 @@ public loadRoadGeoJSON(): void {
   };
 }
 ,
-       onEachFeature: (feature, layer) => {
+  onEachFeature: (feature, layer) => {
   const props = feature.properties;
 
   
@@ -460,13 +659,13 @@ toggleRoadGeoJSON(event: Event): void {
         })
       }).addTo(this.map);
 
-      // myMarker.bindPopup('📍 Vị trí của bạn').openPopup();
+      myMarker.bindPopup('📍 Vị trí của bạn').openPopup();
 
       
-      this.map.flyTo([lat, lon], 15, {
-        animate: true,
-        duration: 2 
-      });
+      // this.map.flyTo([lat, lon], 15, {
+      //   animate: true,
+      //   duration: 2 
+      // });
     },
     (error) => {
       console.error('Lỗi lấy vị trí:', error);
@@ -474,5 +673,8 @@ toggleRoadGeoJSON(event: Event): void {
     }
   );
 }
+
+
+
 
 }
