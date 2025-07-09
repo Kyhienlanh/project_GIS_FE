@@ -19,11 +19,11 @@ export class Login {
       pass: this.password,
     };
     console.log(this.username);
-      console.log(this.password);
+    console.log(this.password);
     this.http.post('https://localhost:7035/api/authentication', loginData).subscribe({
       next: (res: any) => {
         console.log('Token:', res);
-        localStorage.setItem('token', res); // lưu token
+        localStorage.setItem('token', res); 
         alert('Đăng nhập thành công');
       },
       error: (err) => {

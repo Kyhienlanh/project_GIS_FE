@@ -3,13 +3,13 @@ import * as L from 'leaflet';
 import Fuse from 'fuse.js';
 import { ViewChild, ElementRef } from '@angular/core';
 
-
 @Component({
-  selector: 'app-layer',
-  templateUrl: './layer.html',
-  styleUrls: ['./layer.css']
+  selector: 'app-homeuser',
+  imports: [],
+  templateUrl: './homeuser.html',
+  styleUrl: './homeuser.css'
 })
-export class Layer implements OnInit,AfterViewInit  {
+export class Homeuser  implements OnInit,AfterViewInit  {
   menuOpen = false;
 
   private map!: L.Map;
@@ -19,7 +19,7 @@ export class Layer implements OnInit,AfterViewInit  {
   private pointLayerDulich!: L.GeoJSON;
   private pointLayerNew!: L.GeoJSON;
   private roadLayerGeoJSON!: L.GeoJSON;
-  // private roadWmsLayer!: L.TileLayer.WMS;
+
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
   pointFeatures: any[] = []; 
   searchResults: any[] = [];
@@ -440,6 +440,39 @@ toggleRoadGeoJSON(event: Event): void {
       console.error('Lỗi khi gọi GeoServer:', err);
     });
   }
+    
+ public showMyLocation(): void {
+  if (!navigator.geolocation) {
+    alert('Trình duyệt không hỗ trợ định vị!');
+    return;
+  }
 
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      const myMarker = L.marker([lat, lon], {
+        icon: L.icon({
+          iconUrl: 'assets/icons/myaddress_pin.png',
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        })
+      }).addTo(this.map);
+
+      // myMarker.bindPopup('📍 Vị trí của bạn').openPopup();
+
+      
+      this.map.flyTo([lat, lon], 15, {
+        animate: true,
+        duration: 2 
+      });
+    },
+    (error) => {
+      console.error('Lỗi lấy vị trí:', error);
+      alert('Không thể lấy vị trí của bạn.');
+    }
+  );
+}
 
 }

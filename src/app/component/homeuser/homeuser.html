@@ -34,21 +34,21 @@
             <input type="range" min="0" max="1" step="0.1" [value]="opacity" (input)="updateOpacity('newbinhduong', $event)" />
           }
 
-          <label>
+          <!-- <label>
             <input type="checkbox" (change)="toggleLayer('oldbinhduong', $event)" [checked]="check2" />
             91 phường xã cũ
           </label>
           @if (check2) {
             <input type="range" min="0" max="1" step="0.1" [value]="opacity2" (input)="updateOpacity('oldbinhduong', $event)" />
-          }
+          } -->
         </div>
 
         <div class="ChosePoint">
           <h3 class="Point">Điểm</h3>
-          <label>
+          <!-- <label>
             <input type="checkbox" (change)="togglePoint('PointUBND', $event)" />
             Trung tâm hành chính cũ
-          </label>
+          </label> -->
           <label>
             <input type="checkbox" (change)="togglePointnew('PointUBNDnew', $event)" [checked]="checkpointNew"/>
             Trung tâm hành chính mới
@@ -68,14 +68,15 @@
           </label> -->
           <label>
             <input type="checkbox" (change)="toggleRoadGeoJSON($event)" />
-            Tuyến đường giao thông (popup)
+            Tuyến đường giao thông 
           </label>
 
 
         </div>
         <div>
-          <button (click)="exportGeoJSON('old')">Export UBND Cũ</button>
-          <button (click)="exportGeoJSON('new')">Export UBND Mới</button>
+          <!-- <button (click)="exportGeoJSON('old')">Export UBND Cũ</button>
+          <button (click)="exportGeoJSON('new')">Export UBND Mới</button> -->
+            <button (click)="showMyLocation()">📍 Vị trí của tôi</button>
 
         </div>
       </div>
