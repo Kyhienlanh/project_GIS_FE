@@ -19,6 +19,7 @@ export class Layer implements OnInit,AfterViewInit  {
   private pointLayerDulich!: L.GeoJSON;
   private pointLayerNew!: L.GeoJSON;
   private roadLayerGeoJSON!: L.GeoJSON;
+  private CameraLayerGeoJSON!: L.GeoJSON;
   // private roadWmsLayer!: L.TileLayer.WMS;
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
   pointFeatures: any[] = []; 
@@ -441,5 +442,90 @@ toggleRoadGeoJSON(event: Event): void {
     });
   }
 
+  //camera
+   customIconCamera = L.icon({
+      iconUrl: 'assets/icons/camera_pin.png', // icon du lịch
+      iconSize: [30, 40],
+      iconAnchor: [15, 40],
+      popupAnchor: [0, -40]
+    });
+    togglePointCamera(Point: string, event: Event): void {
+      const CheckPoint = (event.target as HTMLInputElement).checked;
+      if (CheckPoint) {
+        this.loadPointsFromGeoServerCamera();
+        console.log('Bật điểm camera');
+      } else {
+        if (this.CameraLayerGeoJSON) {
+          this.map.removeLayer(this.CameraLayerGeoJSON);
+          console.log('Ẩn điểm lịch');
+        }
+      }
+    }
+
+    private loadPointsFromGeoServerCamera(): void {
+  const url ='http://localhost:8080/geoserver/ne/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ne:camera&bbox=106.61,10.90,106.82,11.06&outputFormat=application/json';
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+     
+      if (this.CameraLayerGeoJSON) {
+        this.map.removeLayer(this.CameraLayerGeoJSON);
+      }
+      this.CameraLayerGeoJSON = L.geoJSON(data, {
+        pointToLayer: (feature, latlng) => {
+          return L.marker(latlng, { icon: this.customIconCamera });
+        },
+        onEachFeature: (feature, layer) => {
+          console.log('Thuộc tính điểm:', feature.properties);
+          const props = feature.properties;
+      const popupContent = `
+        <div style="width: 400px; font-family: Arial, sans-serif; border-radius: 10px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); background-color: #fff;">
+          <h3 style="margin: 0 0 12px 0; color: #2E86C1; font-size: 20px;">${props.ten || 'Không rõ tên'}</h3>
+          
+          <p style="margin: 6px 0; font-size: 16px;"><strong>Ghi chú:</strong> ${props.phuong || 'Không có'}</p>
+          <p style="margin: 6px 0; font-size: 16px;"><strong>Thông tin:</strong> ${props.TruSo || 'Chưa cập nhật'}</p>
+          
+          <p style="margin: 6px 0; font-size: 14px; color: gray;">
+            <strong>Vĩ độ:</strong> ${props.lat} - 
+            <strong>Kinh độ:</strong> ${props.lon}
+          </p>
+
+          ${props.camera ? `
+          <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-top: 12px;">
+            <iframe 
+              src="${props.camera}" 
+              title="Camera trực tiếp"
+              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen>
+            </iframe>
+          </div>` : '<p style="color: red; font-size: 14px;">Không có camera</p>'}
+        </div>
+      `;
+
+
+
+          layer.bindPopup(popupContent, { maxWidth: 600 });
+           layer.on('click', (e: L.LeafletMouseEvent) => {
+            layer.openPopup();
+            this.map.flyTo(e.latlng, 14, {
+              animate: true,
+              duration: 1  
+            });
+          });
+          if ('bringToFront' in layer && typeof (layer as any).bringToFront === 'function') {
+            (layer as any).bringToFront();
+          }
+        }
+      });
+
+      this.CameraLayerGeoJSON.addTo(this.map);
+    })
+    .catch(err => {
+      console.error('Lỗi khi gọi GeoServer:', err);
+    });
+  }
 
 }

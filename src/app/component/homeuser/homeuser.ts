@@ -3,7 +3,7 @@ import * as L from 'leaflet';
 import Fuse from 'fuse.js';
 import { ViewChild, ElementRef } from '@angular/core';
 import 'leaflet-routing-machine';
-
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-homeuser',
   imports: [],
@@ -12,6 +12,7 @@ import 'leaflet-routing-machine';
 })
 
 export class Homeuser  implements OnInit,AfterViewInit  {
+  constructor(private router: Router) {}
   pointFeatures: any[] = []; 
   searchResults: any[] = [];
   private fuse!: Fuse<any>;
@@ -674,6 +675,12 @@ toggleRoadGeoJSON(event: Event): void {
   );
 }
 
+
+goToLogin() {
+  // Xóa token nếu cần:
+  localStorage.removeItem('token');
+  this.router.navigate(['/login']);
+}
 
 
 

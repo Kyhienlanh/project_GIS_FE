@@ -1,6 +1,7 @@
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-login',
   imports: [  FormsModule, HttpClientModule],
@@ -11,8 +12,8 @@ export class Login {
   username: string = '';
   password: string = '';
 
-  constructor(private http: HttpClient) {}
-
+  constructor(private http: HttpClient,private router:Router) {}
+  
   onSubmit() {
     const loginData = {
       Username: this.username,
@@ -22,9 +23,10 @@ export class Login {
     console.log(this.password);
     this.http.post('https://localhost:7035/api/authentication', loginData).subscribe({
       next: (res: any) => {
-        console.log('Token:', res);
-        localStorage.setItem('token', res); 
-        alert('Đăng nhập thành công');
+        console.log('Token:', res.token);
+        localStorage.setItem('token', res.token); 
+        
+        this.router.navigate(['/layer']);
       },
       error: (err) => {
         console.error(err);
@@ -32,4 +34,5 @@ export class Login {
       },
     });
   }
+ 
 }

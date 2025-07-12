@@ -1,6 +1,9 @@
 <div class="map-wrapper">
+    <div class="logout-icon" (click)="goToLogin()">
+      <i class="fas fa-sign-out-alt"></i>
+    </div>
   <div class="controls">
-    <div class="search-container">
+    <!-- <div class="search-container">
       <div class="search-bar">
         <button class="menu-toggle" (click)="menuOpen = !menuOpen">⋮</button>
         <input
@@ -20,10 +23,13 @@
           }
         </ul>
       }
-    </div>
+    </div> -->
 
-    @if (menuOpen) {
-      <div class="option-panel">
+    <!-- @if (menuOpen) {
+     
+    } -->
+     
+     <div class="option-panel">
         <div class="Choselayer">
           <h3 class="layer">Vùng</h3>
           <label>
@@ -82,20 +88,15 @@
                 <input type="checkbox" (change)="TimDuongDi($event)" />
                 Chọn vị trí muốn đến
             </label>
-         <label>
+            <label>
             <input type="checkbox" [checked]="isTracking" (change)="toggleTracking($event)" />
             🚶 Theo dõi vị trí khi di chuyển
             </label>
-
-
-
-
         </div>
         <div>
             
         </div>
       </div>
-    }
   </div>    
     <div #notification class="notification" style="display: none;"></div>
 
