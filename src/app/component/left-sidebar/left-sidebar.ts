@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-
+import { HttpClientModule } from '@angular/common/http';
 @Component({
   selector: 'app-left-sidebar',
-  imports: [RouterModule,CommonModule],
+  imports: [RouterModule,CommonModule,HttpClientModule],
   templateUrl: './left-sidebar.html',
   styleUrl: './left-sidebar.css'
 })
@@ -23,9 +23,9 @@ export class LeftSidebar {
       label: 'users',
     },
     {
-      routeLink: 'pages',
-      icon: 'fal fa-file',
-      label: 'Pages',
+      routeLink: 'CheckboxChart',
+    icon: 'fas fa-chart-bar',
+      label: 'CheckboxChart',
     },
     {
       routeLink: 'settings',

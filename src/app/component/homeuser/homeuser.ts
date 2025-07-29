@@ -4,6 +4,8 @@ import Fuse from 'fuse.js';
 import { ViewChild, ElementRef } from '@angular/core';
 import 'leaflet-routing-machine';
 import { Router } from '@angular/router';
+import { CheckboxService } from '../../services/checkbox.service';
+
 @Component({
   selector: 'app-homeuser',
   imports: [],
@@ -12,7 +14,7 @@ import { Router } from '@angular/router';
 })
 
 export class Homeuser  implements OnInit,AfterViewInit  {
-  constructor(private router: Router) {}
+  constructor(private router: Router,private checkboxService: CheckboxService) {}
   pointFeatures: any[] = []; 
   searchResults: any[] = [];
   private fuse!: Fuse<any>;
@@ -50,6 +52,12 @@ export class Homeuser  implements OnInit,AfterViewInit  {
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
 @ViewChild('notification', { static: false }) notificationRef!: ElementRef;
 
+onCheckboxClick(name: string) {
+    this.checkboxService.sendClick(name, 0).subscribe({
+      next: res => console.log('Click sent:', res),
+      error: err => console.error('Error:', err)
+    });
+  }
 showNotification(message: string): void {
   const el = this.notificationRef.nativeElement;
   el.innerText = message;
@@ -182,6 +190,7 @@ showNotificationLong(message: string): void {
 
     if (checked) {
       this.startTrackingLocation();
+       this.onCheckboxClick("tracking");
     } else {
       this.stopTrackingLocation();
     }
@@ -294,6 +303,7 @@ showNotificationLong(message: string): void {
     if (layer === 'oldbinhduong') {
       this.check2 = checked;
       checked ? this.wmsLayer2.addTo(this.map) : this.map.removeLayer(this.wmsLayer2);
+        this.onCheckboxClick("layer");
     }
   }
 
@@ -315,6 +325,7 @@ showNotificationLong(message: string): void {
       if (CheckPoint) {
         this.loadPointsFromGeoServer();
         console.log('Bật điểm UBND');
+          this.onCheckboxClick("UBND");
       } else {
         if (this.pointLayer) {
           this.map.removeLayer(this.pointLayer);
@@ -381,6 +392,7 @@ showNotificationLong(message: string): void {
       if (CheckPoint) {
         this.loadPointsFromGeoServernew();
         console.log('Bật điểm UBND mới');
+         this.onCheckboxClick("pointNew");
       } else {
         if (this.pointLayerNew) {
           this.map.removeLayer(this.pointLayerNew);
@@ -562,6 +574,7 @@ toggleRoadGeoJSON(event: Event): void {
   const checked = (event.target as HTMLInputElement).checked;
   if (checked) {
     this.loadRoadGeoJSON();
+     this.onCheckboxClick("TuyenDuong");
   } else {
     if (this.roadLayerGeoJSON) {
       this.map.removeLayer(this.roadLayerGeoJSON);
@@ -581,6 +594,7 @@ toggleRoadGeoJSON(event: Event): void {
       if (CheckPoint) {
         this.loadPointsFromGeoServerTravel();
         console.log('Bật điểm du lịch');
+         this.onCheckboxClick("Dulich");
       } else {
         if (this.pointLayerDulich) {
           this.map.removeLayer(this.pointLayerDulich);

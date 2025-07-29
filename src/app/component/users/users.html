@@ -1,1 +1,78 @@
-<p><img src="assets/icons/map_pin.png" alt=""></p>
+<!-- Nút mở modal -->
+<button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
+  ➕ Thêm người dùng
+</button>
+
+<!-- Modal thêm người dùng -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form (ngSubmit)="submitAddUser()" #addUserForm="ngForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">Thêm người dùng</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Tên đăng nhập</label>
+            <input [(ngModel)]="newUser.username" name="username" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input [(ngModel)]="newUser.email" name="email" type="email" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Họ tên</label>
+            <input [(ngModel)]="newUser.fullName" name="fullName" class="form-control" />
+          </div>
+          <!-- Thêm các field khác tùy theo nhu cầu -->
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success" [disabled]="addUserForm.invalid">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="user-list">
+  <h2>Danh sách người dùng</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tên đăng nhập</th>
+        <th>Email</th>
+        <th>Họ tên</th>
+        <th>Ngày sinh</th>
+        <th>SĐT</th>
+        <th>Ảnh đại diện</th>
+        <th>Ngày tạo</th>
+        <th>Ngày cập nhật</th>
+        <th>Trạng thái</th>
+        <th>Hành động</th> <!-- Cột mới -->
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users">
+        <td>{{ user.userID }}</td>
+        <td>{{ user.username }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.fullName }}</td>
+        <td>{{ user.dateOfBirth }}</td>
+        <td>{{ user.phoneNumber }}</td>
+        <td>
+          <img [src]="user.profileImage" alt="Ảnh đại diện" width="50" height="50" />
+        </td>
+        <td>{{ user.createdAt }}</td>
+        <td>{{ user.updatedAt }}</td>
+        <td>{{ user.status === 1 ? 'Hoạt động' : 'Không hoạt động' }}</td>
+        <td>
+          <button (click)="onEditUser(user)">✏️ Sửa</button>
+          <button (click)="onDeleteUser(user.userID)">🗑️ Xoá</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
